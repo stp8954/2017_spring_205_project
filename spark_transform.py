@@ -11,7 +11,7 @@ import json
 import geohash as gh 
   
 
-APP_NAME = 'Spark_Kafka_To_MongoDB' 
+APP_NAME = 'Spark_Kafka_To_MongoDB_2' 
 TOPICS = ['raw_loc_data'] 
 
 # location for storing spark checkpoints

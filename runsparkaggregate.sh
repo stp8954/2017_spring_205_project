@@ -7,6 +7,6 @@ do
 	echo $START
 	echo $END
 	python ./purgedb.py
-	/usr/local/spark/bin/spark-submit --packages org.mongodb.spark:mongo-spark-connector_2.11:2.0.0  --py-files /home/w205/w205_project_test/geohash.py /home/w205/w205_project_test/spark_aggregate.py "$START" "$END"
+	/usr/local/spark/bin/spark-submit --packages org.mongodb.spark:mongo-spark-connector_2.11:2.0.0  --py-files ~/2017_spring_205_project/geohash.py ~/2017_spring_205_project/spark_aggregate.py "$START" "$END"
 	sleep 3600s
 done

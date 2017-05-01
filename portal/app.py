@@ -6,6 +6,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, \
 from confluent_kafka import Consumer, KafkaError
 import json
 from pymongo import MongoClient 
+from pykafka import KafkaClient
 import geohash as gh 
 from datetime import datetime
 
@@ -23,6 +24,7 @@ fmt = '%Y-%m-%d %H:%M:%S'
 
 
 def background_thread2():
+    """Example of how to send server generated events to clients."""
     count = 0
     c = Consumer({'bootstrap.servers': 'localhost:9092',  'group.id': 'mygroup','default.topic.config': {'auto.offset.reset': 'earliest' }})
     c.subscribe(['raw_loc_data'])
@@ -33,6 +35,7 @@ def background_thread2():
         msg = c.poll(timeout = 1.0)
         if msg is None:
             continue;
+        #for d in points:
         if not msg.error():
             print(msg.value())
             d = json.loads(msg.value())
@@ -42,6 +45,32 @@ def background_thread2():
             bus_id = d['id']
             a_tag = d['a_tag']
 
+            #if a_tag == 'sf-muni':
+            socketio.emit('my_response',
+                      {'data': "{0}:{1},{2}".format(bus_id,lat,lon), 'count': count, 'bus_id': bus_id, 'lat':lat, 'lon':lon},
+                      namespace='/test')
+            print("{0}:{1},{2}".format(bus_id,lat,lon))
+
+
+client = KafkaClient(hosts="127.0.0.1:9092")
+topic = client.topics['raw_loc_data']
+
+def background_thread():
+    """Example of how to send server generated events to clients."""
+    count = 0
+    consumer = topic.get_simple_consumer(auto_commit_enable= False,auto_offset_reset= -1, reset_offset_on_start= True)
+    while True:
+        for msg in consumer:
+            count += 1
+            if msg is None:
+                continue;
+            
+            d = json.loads(msg.value)
+            lat = float(d['latitude']) 
+            lon = float(d['longitude']) 
+            bus_id = d['id']
+            a_tag = d['a_tag']
+            print("{0}:{1},{2}".format(bus_id,lat,lon))
             if a_tag == 'sf-muni':
                 socketio.emit('my_response',
                       {'data': "{0}:{1},{2}".format(bus_id,lat,lon), 'count': count, 'bus_id': bus_id, 'lat':lat, 'lon':lon},
