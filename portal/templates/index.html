@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Map</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+      $(document).ready(function() {
+            
+            
+        });
+    </script>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 50%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      var map;
+      var marker = null;
+      var image = 'https://cdn4.iconfinder.com/data/icons/maps-and-navigation-solid-icons-vol-1/72/44-512.png'
+      var icon1 = {
+        url: 'http://www.gracechurchbristol.org/wp-content/uploads/2011/02/bus-icon.jpg',
+        size: new google.maps.Size(50,50)
+      }
+      
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 37.7749300, lng: -122.4194200},
+          zoom: 13
+        });
+
+        var h = new Object();
+      var currectBounds = null;
+
+        // Use a "/test" namespace.
+            // An application can open a connection on multiple namespaces, and
+            // Socket.IO will multiplex all those connections on a single
+            // physical channel. If you don't care about multiple channels, you
+            // can set the namespace to an empty string.
+            namespace = '/test';
+
+            // Connect to the Socket.IO server.
+            // The connection URL has the following format:
+            //     http[s]://<domain>:<port>[/<namespace>]
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+            // Event handler for new connections.
+            // The callback function is invoked when a connection with the
+            // server is established.
+            socket.on('connect', function() {
+                socket.emit('my_event', {data: 'I\'m connected!'});
+            });
+
+            // Event handler for server sent data.
+            // The callback function is invoked whenever the server emits data
+            // to the client. The data is then displayed in the "Received"
+            // section of the page.
+            socket.on('my_response', function(msg) {
+                $('#log').append('<br>' + $('<div/>').text('Received #' + msg.bus_id + ': ' + msg.data).html());
+
+                var newPoint = new google.maps.LatLng(msg.lat,msg.lon);
+
+                if(currectBounds){
+                  if(currectBounds.contains(newPoint)){
+                    
+                    //$('#log').append('<br>' + $('<div/>').text('point inside bounds' ).html());
+                    
+                    if(h[msg.bus_id]){
+                    
+                      h[msg.bus_id].setPosition(newPoint);
+                      
+                    }
+                    else
+                    {
+                      //$('#log').append('<br>' + $('<div/>').text('adding new bus').html());
+                    
+                       h[msg.bus_id] = new google.maps.Marker({
+                          position:newPoint,
+                          map:map,
+                          label:msg.bus_id
+                        });
+                    }
+                  }
+                }
+                else
+                {
+                  //$('#log').append('<br>' + $('<div/>').text('bounds still null').html());
+                }
+                
+            });
+
+            google.maps.event.addListener(map, "bounds_changed",function() {
+              //$('#log').append('<br>' + $('<div/>').text('got new bounds').html());
+              currectBounds = map.getBounds();
+            });
+
+      }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDA4bPlz1-ity0j9rUXInpx4nvUxJVpQ28&callback=initMap"
+    async defer></script>
+     <h2>Receive:</h2>
+    <div id="log"></div>
+  </body>
+</html>
