@@ -28,11 +28,12 @@ def quiet_logs( sc ):
      logger = sc._jvm.org.apache.log4j 
      logger.LogManager.getLogger("org").setLevel( logger.Level.ERROR ) 
 
-
+#calculate geohash for the given location
 def calc_geohash(lat,lon , length): 
     return gh.encode(lat,lon,length) 
 
 
+#convert the data received from kafka into MongoDB document format
 def convertToMongoRecord(loc_data): 
     d = json.loads(loc_data) 
     lat = float(d['latitude']) 
@@ -51,6 +52,9 @@ def convertToMongoRecord(loc_data):
     return post 
 
 count =0
+#convert the data received from kafka into MongoDB document format
+#Since this function is called in the foreachPartition function, spark tries to serialize it for distributed processing
+# For that reason the client connection has to be created in the function
 def convertToMongoRecord2(itr): 
 	client = MongoClient('mongodb://127.0.0.1:27017') 
 	db = client.bus_locationdb 
@@ -76,6 +80,9 @@ def convertToMongoRecord2(itr):
 			print(post)
 
 
+#this method tries to create a context from the checkpoint first if it exists.
+#This allows Spark to continue form where it last left off
+# if the checkpoint doesnt exits, it creates a new Context
 def create_context(): 
     spark_conf = SparkConf().setMaster('local[2]').setAppName(APP_NAME) 
     sc = pyspark.SparkContext(conf= spark_conf)
@@ -94,6 +101,7 @@ def process(stream):
     stream.foreachRDD(lambda rdd: rdd.foreachPartition(convertToMongoRecord2))
   
 
+#Create StreamingContext
 ssc = StreamingContext.getOrCreate(CHECKPOINT, create_context) 
 ssc.start() 
 ssc.awaitTermination() 

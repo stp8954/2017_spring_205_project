@@ -1,6 +1,7 @@
 # coding: UTF-8
 """
 Copyright (C) 2009 Hiroaki Kawai <kawai@iij.ad.jp>
+Taken from https://github.com/sdaulton/TaxiPrediction/blob/master/geohash.py
 """
 try:
 	import _geohash
