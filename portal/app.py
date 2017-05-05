@@ -24,18 +24,21 @@ fmt = '%Y-%m-%d %H:%M:%S'
 
 
 def background_thread2():
-    """Example of how to send server generated events to clients."""
+    """Background task created when a client connects to the socket via SocketIO
+    It then subscribes to kafka and pipes messages from kafka to the client
+    ."""
     count = 0
+    #create kafka consumer
     c = Consumer({'bootstrap.servers': 'localhost:9092',  'group.id': 'mygroup','default.topic.config': {'auto.offset.reset': 'earliest' }})
     c.subscribe(['raw_loc_data'])
 
     while True:
-        socketio.sleep(1)
+        #socketio.sleep(1)
         count += 1
         msg = c.poll(timeout = 1.0)
         if msg is None:
             continue;
-        #for d in points:
+        #if msg is not null, extract lat , lon and bus id data from the msg and send to client via SocketIO
         if not msg.error():
             print(msg.value())
             d = json.loads(msg.value())
@@ -55,8 +58,9 @@ def background_thread2():
 client = KafkaClient(hosts="127.0.0.1:9092")
 topic = client.topics['raw_loc_data']
 
+#Not used for this application
 def background_thread():
-    """Example of how to send server generated events to clients."""
+    """This is a dummy method to work with a different kafka api"""
     count = 0
     consumer = topic.get_simple_consumer(auto_commit_enable= False,auto_offset_reset= -1, reset_offset_on_start= True)
     while True:
@@ -78,6 +82,8 @@ def background_thread():
                 print("{0}:{1},{2}".format(bus_id,lat,lon))
 
 
+# this methos queries mongodb for aggregate data for the datetime in the query string. It then constructs an HTML with code for 
+#displaying heat maps on google maps
 @app.route('/heatmap',methods=['GET'])
 def get_aggregates():
     start =  datetime.strptime(request.args.get('datetime'),fmt)
@@ -145,7 +151,7 @@ def get_aggregates():
 def index():
     return render_template('index.html', async_mode=socketio.async_mode)
 
-
+#listens for connect command from remote client.
 @socketio.on('connect', namespace='/test')
 def test_connect():
     global thread
@@ -158,6 +164,6 @@ def test_connect():
 def test_disconnect():
     print('Client disconnected', request.sid)
 
-
+# launch the main app
 if __name__ == '__main__':
     socketio.run(app,host='0.0.0.0', port=80, debug=True)

@@ -7,6 +7,7 @@ import datetime
 from urllib2 import HTTPError
 import urllib2
 
+#Nextbus api URL
 NEXTBUS_SERVICE_URL = "http://webservices.nextbus.com/service/publicXMLFeed"
 
 
@@ -24,6 +25,7 @@ def fetch_xml(url):
     """ Parse the fetched data into xml tree """
     return ElementTree.parse(_url_fetcher(url))
 
+#construct the URI for querying bus data
 def make_nextbus_url(command, a = None, *args):
     real_args = []
     real_args.append(('command', command))
@@ -36,6 +38,7 @@ def fetch_nextbus_url(*args, **kwargs):
     url = make_nextbus_url(*args, **kwargs)
     return fetch_xml(url)
 
+#method to get all bus data for the given agency
 def get_all_vehicle_locations(agency_tag):
     etree = fetch_nextbus_url("vehicleLocations", agency_tag, ('t', 0))
     return map(lambda elem : Vehicle.from_elem(elem,agency_tag), etree.findall("vehicle"))
@@ -64,6 +67,9 @@ class Vehicle:
 
     @classmethod
     def from_elem(cls, elem, atag):
+        """
+        Parse relevant data from the XML returned by NextBus
+        """
         self = cls()
         self.id = elem.get("id")
         self.route_tag = elem.get("routeTag")
